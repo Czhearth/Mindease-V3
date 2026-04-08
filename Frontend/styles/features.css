@@ -1,0 +1,72 @@
+.features-page {
+  color: #dce9f5;
+}
+
+.features-shell {
+  display: grid;
+  gap: 22px;
+}
+
+.features-hero {
+  text-align: center;
+  padding: 8px 10px 2px;
+}
+
+.features-hero h1 {
+  font-size: clamp(38px, 5.6vw, 58px);
+  margin: 2px 0 8px;
+  color: #9ccdbd;
+}
+
+.features-cards-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 14px;
+}
+
+.feature-detail-card {
+  border-radius: 12px;
+  border: 1px solid rgba(120, 174, 204, 0.22);
+  background: linear-gradient(160deg, rgba(7, 21, 34, 0.95), rgba(10, 32, 47, 0.9));
+  box-shadow: 0 14px 28px rgba(2, 10, 18, 0.28);
+  padding: 18px 18px;
+  min-height: 170px;
+}
+
+.feature-detail-card h2 {
+  margin-bottom: 8px;
+  font-size: 31px;
+  line-height: 1.05;
+}
+
+.feature-detail-card p {
+  color: #a6bfd0;
+  line-height: 1.45;
+  font-size: 16px;
+}
+
+.features-cta {
+  text-align: center;
+  padding: 8px 8px 4px;
+}
+
+.features-cta h2 {
+  font-size: clamp(34px, 4.2vw, 48px);
+  margin-bottom: 8px;
+}
+
+.features-cta p {
+  color: #9ab6c8;
+  margin-bottom: 16px;
+}
+
+#startJourneyBtn {
+  border-radius: 12px;
+  padding: 13px 22px;
+}
+
+@media (max-width: 980px) {
+  .features-cards-grid {
+    grid-template-columns: 1fr;
+  }
+}

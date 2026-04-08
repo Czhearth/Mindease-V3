@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<title>MindEase | Begin Your Journey</title>
+	<link rel="preconnect" href="https://fonts.googleapis.com">
+	<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+	<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Manrope:wght@400;500;700&display=swap" rel="stylesheet">
+	<link rel="stylesheet" href="styles/base.css">
+	<link rel="stylesheet" href="styles/home.css">
+</head>
+<body>
+	<div class="ambient-shape one"></div>
+	<div class="ambient-shape two"></div>
+
+	<header class="topbar">
+		<div class="brand-wrap">
+			<img src="logo.jpg" alt="MindEase logo" class="brand-logo">
+			<div class="brand-text">MindEase V3</div>
+		</div>
+		<nav class="top-nav">
+			<a href="features.html">Features</a>
+			<a href="about.html">About MindEase</a>
+		</nav>
+		<div class="header-right">
+			<button id="themeToggle" class="theme-toggle" type="button" aria-label="Toggle theme">🌙</button>
+			<button id="headerSignIn" class="ghost-btn">Sign In</button>
+		</div>
+	</header>
+
+	<main class="landing-page">
+		<!-- Hero Section -->
+		<section class="hero-section">
+			<div class="hero-content">
+				<p class="hero-kicker">Your AI Agent Mental Health Companion</p>
+				<h1><span class="hero-accent">Find Peace</span><br>of Mind</h1>
+				<p class="hero-subtitle">Experience a new way of emotional support. Our AI companion is here to listen, understand, and guide you through life's journey.</p>
+				
+				<!-- Mood Slider -->
+				<div class="mood-slider-section">
+					<p class="mood-prompt">Whatever you're feeling, we're here to listen</p>
+					<div class="mood-slider-container">
+						<div class="mood-option">😔<span>Down</span></div>
+						<div class="mood-option">😊<span>Content</span></div>
+						<div class="mood-option">😌<span>Peaceful</span></div>
+						<div class="mood-option">🤗<span>Happy</span></div>
+						<div class="mood-option">✨<span>Excited</span></div>
+					</div>
+					<input id="landingMoodSlider" class="mood-slider-input" type="range" min="1" max="5" step="1" value="3" aria-label="Mood slider">
+					<p class="mood-hint">Slide to express how you're feeling today</p>
+				</div>
+
+				<button id="beginBtn" class="primary-btn large-btn">Begin Your Journey</button>
+			</div>
+		</section>
+
+		<!-- Features Section -->
+		<section class="features-section">
+			<h2>How MindEase Helps You</h2>
+			<p class="features-intro">Experience emotional support powered by empathetic AI</p>
+			
+			<div class="features-grid">
+				<div class="feature-card">
+					<div class="feature-icon">🕐</div>
+					<h3>24/7 Support</h3>
+					<p>Always here to listen and support you, any time of day</p>
+				</div>
+				<div class="feature-card">
+					<div class="feature-icon">💡</div>
+					<h3>Smart Insights</h3>
+					<p>Personalized guidance powered by emotional intelligence</p>
+				</div>
+				<div class="feature-card">
+					<div class="feature-icon">🔒</div>
+					<h3>Private & Secure</h3>
+					<p>Your conversations are always confidential and encrypted</p>
+				</div>
+				<div class="feature-card">
+					<div class="feature-icon">📈</div>
+					<h3>Evidence-Based</h3>
+					<p>Therapeutic techniques backed by clinical research</p>
+				</div>
+			</div>
+		</section>
+
+		<!-- Auth Modal (initially hidden, shown when needed) -->
+		<section id="authModal" class="auth-panel reveal hidden">
+			<button id="closeAuth" class="close-auth">&times;</button>
+			<div class="auth-switch">
+				<button id="tabLogin" class="active">Login</button>
+				<button id="tabSignup">Sign Up</button>
+			</div>
+
+			<form id="authForm" class="auth-form">
+				<label id="nameFieldWrap" class="hidden">
+					Full Name
+					<input id="fullName" type="text" placeholder="Alex Jordan">
+				</label>
+
+				<label>
+					Email
+					<input id="email" type="email" required placeholder="you@example.com">
+				</label>
+
+				<label>
+					Password
+					<input id="password" type="password" required minlength="8" placeholder="Minimum 8 characters">
+				</label>
+
+				<button id="authSubmit" type="submit" class="primary-btn">Login</button>
+			</form>
+
+			<p id="authMessage" class="form-message"></p>
+		</section>
+	</main>
+
+	<footer class="site-footer">Copyright 2026 MindEase. All rights reserved.</footer>
+
+	<script src="theme.js"></script>
+	<script src="auth.js"></script>
+</body>
+</html>

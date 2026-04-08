@@ -1,0 +1,84 @@
+.about-page {
+  color: #dce9f5;
+}
+
+.about-shell {
+  display: grid;
+  gap: 26px;
+  padding-top: 8px;
+}
+
+.about-hero {
+  text-align: center;
+  padding: 8px 10px 0;
+  background: transparent !important;
+  border: 0 !important;
+  box-shadow: none !important;
+  backdrop-filter: none !important;
+}
+
+.about-hero h1 {
+  font-size: clamp(42px, 6vw, 62px);
+  line-height: 1.05;
+  margin-bottom: 12px;
+  color: #9ccdbd;
+}
+
+.about-hero .subtitle {
+  max-width: 760px;
+  margin: 0 auto;
+  color: #b4c9d8;
+  font-size: clamp(22px, 2.8vw, 34px);
+  line-height: 1.35;
+}
+
+.about-grid {
+  display: grid;
+  gap: 22px;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.about-card {
+  border-radius: 14px;
+  border: 1px solid rgba(120, 174, 204, 0.24);
+  background: linear-gradient(160deg, rgba(7, 21, 34, 0.96), rgba(10, 32, 47, 0.9));
+  box-shadow: 0 18px 34px rgba(2, 10, 18, 0.32);
+  padding: 34px 22px;
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 14px;
+  min-height: 250px;
+}
+
+.about-card h2 {
+  font-size: clamp(30px, 3.6vw, 44px);
+  line-height: 1.12;
+}
+
+.about-card p {
+  color: #a6bfd0;
+  line-height: 1.45;
+  font-size: 17px;
+}
+
+.card-icon {
+  font-size: 42px;
+  color: #9cd7c3;
+  margin-bottom: 2px;
+}
+
+@media (max-width: 980px) {
+  .about-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .about-hero .subtitle {
+    font-size: clamp(18px, 4vw, 26px);
+  }
+
+  .about-card h2 {
+    font-size: clamp(28px, 8vw, 40px);
+  }
+}

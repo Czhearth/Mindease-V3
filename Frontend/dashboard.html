@@ -1,0 +1,316 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Dashboard | MindEase</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Manrope:wght@400;500;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles/base.css">
+  <link rel="stylesheet" href="styles/dashboard.css">
+</head>
+<body class="dashboard-page">
+  <div class="ambient-shape one"></div>
+  <div class="ambient-shape two"></div>
+
+  <header class="topbar">
+    <div class="brand-wrap">
+      <img src="logo.jpg" alt="MindEase logo" class="brand-logo">
+      <div class="brand-text">MindEase V3</div>
+    </div>
+    <nav class="top-nav">
+      <a href="index.html">Home</a>
+      <a href="features.html">Features</a>
+      <a href="chat.html">Chat</a>
+      <a href="about.html">About</a>
+      <a href="dashboard.html" class="active">Dashboard</a>
+    </nav>
+    <div class="header-right">
+      <button id="logoutBtn" class="ghost-btn">Logout</button>
+    </div>
+  </header>
+
+  <main class="page-shell dashboard-shell">
+    <section class="dashboard-hero dashboard-card">
+      <div class="hero-copy">
+        <p class="eyebrow">Progress Tracking</p>
+        <h1>Welcome back, there</h1>
+        <p class="dashboard-date" id="dashboardDate">Sunday, April 5</p>
+      </div>
+    </section>
+
+    <section class="dashboard-grid">
+      <article class="dashboard-card quick-actions-card">
+        <div class="section-heading compact">
+          <h2>Quick Actions</h2>
+          <p>Start your wellness journey</p>
+        </div>
+        <button id="startTherapyBtn" class="primary-action" type="button">
+          <span class="card-emoji">💬</span>
+          <span class="action-title">Start Therapy</span>
+          <small>Begin a new session</small>
+        </button>
+        <div class="mini-action-grid">
+          <button id="trackMoodBtn" class="mini-action" type="button">
+            <span class="card-emoji">❤️</span>
+            <span class="action-title">Track Mood</span>
+            <small>How are you feeling?</small>
+          </button>
+          <button id="checkinBtn" class="mini-action" type="button">
+            <span class="card-emoji">🫀</span>
+            <span class="action-title">Check-in</span>
+            <small>Quick wellness check</small>
+          </button>
+        </div>
+      </article>
+
+      <article class="dashboard-card overview-card">
+        <div class="section-heading compact">
+          <h2>Today's Overview</h2>
+          <p>Your wellness metrics for <span id="overviewDateInline">today</span></p>
+        </div>
+        <div id="summaryWrap" class="overview-stats"></div>
+        <div class="dashboard-meta" id="reminderBanner">Loading overview...</div>
+      </article>
+
+      <article class="dashboard-card insights-card">
+        <div class="section-heading compact">
+          <h2>Insights</h2>
+          <p>Personalized recommendations based on your activity patterns</p>
+        </div>
+        <div id="moodGraph" class="mood-graph" aria-label="Mood trend graph"></div>
+        <p id="graphCaption" class="graph-caption">Loading mood trend...</p>
+        <div id="insightsList" class="insights-list"></div>
+      </article>
+    </section>
+
+    <section class="dashboard-card activities-card">
+      <div class="section-heading compact">
+        <h2>Anxiety Relief Activities</h2>
+        <p>Interactive exercises to help reduce stress and anxiety</p>
+      </div>
+      <div class="activity-grid">
+        <button id="breathingBtn" class="activity-item activity-trigger active" type="button" data-activity="breathing" data-label="Breathing Patterns">
+          <div class="activity-icon blue">〰</div>
+          <div>
+            <h3>Breathing Patterns</h3>
+            <p>Follow calming breathing exercises with visual guidance</p>
+            <span class="activity-time">5 mins</span>
+          </div>
+        </button>
+        <button id="journalBtn" class="activity-item activity-trigger" type="button" data-activity="journal" data-label="Journal">
+          <div class="activity-icon rose">✎</div>
+          <div>
+            <h3>Journal</h3>
+            <p>Reflect with a quote from philosophers and famous voices</p>
+            <span class="activity-time">10 mins</span>
+          </div>
+        </button>
+        <button id="forestBtn" class="activity-item activity-trigger" type="button" data-activity="forest" data-label="Mindful Forest">
+          <div class="activity-icon green">🌲</div>
+          <div>
+            <h3>Mindful Forest</h3>
+            <p>Take a peaceful walk through a virtual forest</p>
+            <span class="activity-time">15 mins</span>
+          </div>
+        </button>
+        <button id="oceanBtn" class="activity-item activity-trigger" type="button" data-activity="ocean" data-label="Ocean Waves">
+          <div class="activity-icon aqua">≋</div>
+          <div>
+            <h3>Ocean Waves</h3>
+            <p>Match your breath with gentle ocean waves</p>
+            <span class="activity-time">8 mins</span>
+          </div>
+        </button>
+      </div>
+      <div class="activities-cta-wrap">
+        <button id="activityStartCta" class="activities-cta" type="button">Start Breathing Patterns</button>
+      </div>
+    </section>
+
+    <section id="checkinModal" class="modal" aria-hidden="true">
+      <div class="modal-card">
+        <div class="modal-head">
+          <div>
+            <h2>Log Activity</h2>
+            <p class="modal-subtitle">Record your wellness activity</p>
+          </div>
+          <button id="closeCheckinModal" class="modal-close" type="button" aria-label="Close">&#10005;</button>
+        </div>
+
+        <form id="checkinForm" class="modal-form">
+          <label>
+            Activity Type
+            <select id="activityType" required>
+              <option value="">Select activity type</option>
+              <option value="meditation">Meditation</option>
+              <option value="walk">Walk</option>
+              <option value="breathing">Breathing Exercise</option>
+              <option value="journal">Journaling</option>
+              <option value="sleep">Sleep Hygiene</option>
+            </select>
+          </label>
+
+          <label>
+            Name
+            <input id="activityName" type="text" placeholder="Morning Meditation, Evening Walk, etc." required>
+          </label>
+
+          <label>
+            Duration (minutes)
+            <input id="activityDuration" type="number" min="1" max="300" value="15" required>
+          </label>
+
+          <label>
+            Description (optional)
+            <textarea id="activityDesc" placeholder="How did it go?"></textarea>
+          </label>
+
+          <div class="modal-actions">
+            <button id="cancelCheckin" class="ghost-btn" type="button">Cancel</button>
+            <button class="primary-btn" type="submit">Save Activity</button>
+          </div>
+        </form>
+      </div>
+    </section>
+
+    <section id="moodModal" class="modal" aria-hidden="true">
+      <div class="modal-card mood-modal-card">
+        <div class="modal-head">
+          <div>
+            <h2>How are you feeling?</h2>
+            <p class="modal-subtitle">Move the slider to track your current mood</p>
+          </div>
+          <button id="closeMoodModal" class="modal-close" type="button" aria-label="Close">&#10005;</button>
+        </div>
+
+        <div class="mood-display">
+          <div id="moodEmoji" class="mood-display-emoji">&#128578;</div>
+          <div id="moodLabel" class="mood-display-label">Neutral</div>
+        </div>
+
+        <div class="mood-popup-options" aria-hidden="true">
+          <span>&#128532;</span>
+          <span>&#128562;</span>
+          <span>&#128578;</span>
+          <span>&#128515;</span>
+          <span>&#129303;</span>
+        </div>
+
+        <input id="moodSlider" class="mood-slider-input" type="range" min="1" max="5" step="1" value="3">
+
+        <label class="mood-note-wrap">
+          Optional note
+          <textarea id="moodPopupNote" placeholder="Anything you want to capture about this mood"></textarea>
+        </label>
+
+        <div class="modal-actions mood-actions">
+          <button id="saveMoodBtn" class="primary-btn" type="button">Save Mood</button>
+        </div>
+      </div>
+    </section>
+
+    <section id="breathingModal" class="modal" aria-hidden="true">
+      <div class="modal-card activity-modal-card">
+        <div class="modal-head">
+          <h2>Breathing Patterns</h2>
+          <button id="closeBreathingModal" class="modal-close" type="button" aria-label="Close">&#10005;</button>
+        </div>
+        <div class="breathing-core">
+          <div class="breathing-orb">〰</div>
+          <h3 id="breathingPhase">Breathe In</h3>
+          <div class="breathing-progress"><span id="breathingProgressFill"></span></div>
+          <p id="breathingRound">Round 1 of 5</p>
+          <button id="breathingPauseBtn" class="ghost-btn" type="button">Pause</button>
+        </div>
+      </div>
+    </section>
+
+    <section id="forestModal" class="modal" aria-hidden="true">
+      <div class="modal-card activity-modal-card soundscape-modal">
+        <div class="modal-head">
+          <h2>Mindful Forest</h2>
+          <button id="closeForestModal" class="modal-close" type="button" aria-label="Close">&#10005;</button>
+        </div>
+        <div class="soundscape-icon forest">🌲</div>
+        <label class="soundscape-label">
+          Timer (minutes)
+          <input id="forestTimer" type="number" min="1" max="120" value="60">
+        </label>
+        <label class="soundscape-label">
+          Volume
+          <input id="forestVolume" type="range" min="0" max="100" value="75">
+        </label>
+        <p id="forestRemaining" class="soundscape-remaining">60:00 remaining</p>
+        <div class="modal-actions">
+          <button id="forestStartBtn" class="primary-btn" type="button">Start</button>
+          <button id="forestPauseBtn" class="ghost-btn" type="button">Pause</button>
+          <button id="forestStopBtn" class="danger-btn" type="button">Stop</button>
+        </div>
+      </div>
+    </section>
+
+    <section id="oceanModal" class="modal" aria-hidden="true">
+      <div class="modal-card activity-modal-card soundscape-modal">
+        <div class="modal-head">
+          <h2>Ocean Waves</h2>
+          <button id="closeOceanModal" class="modal-close" type="button" aria-label="Close">&#10005;</button>
+        </div>
+        <div class="soundscape-icon ocean">≋</div>
+        <label class="soundscape-label">
+          Timer (minutes)
+          <input id="oceanTimer" type="number" min="1" max="120" value="60">
+        </label>
+        <label class="soundscape-label">
+          Volume
+          <input id="oceanVolume" type="range" min="0" max="100" value="75">
+        </label>
+        <p id="oceanRemaining" class="soundscape-remaining">60:00 remaining</p>
+        <div class="modal-actions">
+          <button id="oceanStartBtn" class="primary-btn" type="button">Start</button>
+          <button id="oceanPauseBtn" class="ghost-btn" type="button">Pause</button>
+          <button id="oceanStopBtn" class="danger-btn" type="button">Stop</button>
+        </div>
+      </div>
+    </section>
+
+    <section id="journalModal" class="modal" aria-hidden="true">
+      <div class="modal-card activity-modal-card journal-modal">
+        <div class="modal-head">
+          <h2>Journal</h2>
+          <button id="closeJournalModal" class="modal-close" type="button" aria-label="Close">&#10005;</button>
+        </div>
+        <p class="modal-subtitle">Write what you feel, want, or need to remember. Your entries stay in your journal history.</p>
+
+        <form id="journalForm" class="journal-form">
+          <label for="journalEntryInput" class="journal-label">Your entry</label>
+          <textarea id="journalEntryInput" class="journal-input" rows="6" maxlength="4000" placeholder="Write whatever is on your mind..."></textarea>
+          <div class="modal-actions journal-actions">
+            <button id="saveJournalBtn" class="primary-btn" type="submit">Save Entry</button>
+            <button id="clearJournalBtn" class="ghost-btn" type="button">Clear</button>
+          </div>
+        </form>
+        <p id="journalStatus" class="journal-status" aria-live="polite"></p>
+
+        <section class="journal-history-panel">
+          <div class="section-heading compact journal-history-heading">
+            <h3>Journal History</h3>
+            <p>Recent entries from this account</p>
+          </div>
+          <div id="journalHistoryList" class="journal-history-list scroll-area"></div>
+          <div class="journal-history-actions">
+            <button id="loadMoreJournalBtn" class="ghost-btn" type="button">Load older records</button>
+          </div>
+        </section>
+      </div>
+    </section>
+  </main>
+
+  <footer class="site-footer">Copyright 2026 MindEase. All rights reserved.</footer>
+
+  <script src="theme.js"></script>
+  <script src="common.js"></script>
+  <script src="dashboard.js"></script>
+</body>
+</html>
