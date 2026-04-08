@@ -13,7 +13,7 @@ let moodAsked = false
 let isBotTyping = false
 
 
-const API_URL = "https://mindease-v3.onrender.com"
+const API_URL = "https://mindease-v3.onrender.com/api";
 
 
 function addMessage(text, type){
