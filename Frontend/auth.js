@@ -13,12 +13,15 @@ const AUTH_PAGE = "auth.html"
 
 let mode = "login"
 const params = new URLSearchParams(window.location.search)
-const API_CANDIDATES = [
+const isLocalHost = window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1"
+const API_CANDIDATES = isLocalHost
+? [
 window.location.origin + "/api",
 "http://127.0.0.1:8000/api",
 "http://localhost:8000/api",
 "https://mindease-v3.onrender.com/api"
 ]
+: ["https://mindease-v3.onrender.com/api"]
 
 async function resolveApiUrl() {
 const cached = localStorage.getItem("mindease_api_url") || ""

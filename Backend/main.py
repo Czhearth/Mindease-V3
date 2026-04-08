@@ -73,7 +73,7 @@ def parse_frontend_origins(raw_value: str) -> list[str]:
 
 frontend_origins = os.getenv(
     "FRONTEND_ORIGINS",
-    "http://127.0.0.1:5500,http://localhost:5500,https://mindeasev3.vercel.app",
+    "http://127.0.0.1:5500,http://localhost:5500,https://mindeasev3.vercel.app,https://mindease-v3.vercel.app",
 )
 
 ALLOWED_ORIGINS = parse_frontend_origins(frontend_origins)
@@ -81,6 +81,7 @@ ALLOWED_ORIGINS = parse_frontend_origins(frontend_origins)
 # Ensure critical production/local origins are always present even if env is misconfigured.
 REQUIRED_ORIGINS = [
     "https://mindeasev3.vercel.app",
+    "https://mindease-v3.vercel.app",
     "http://127.0.0.1:5500",
     "http://localhost:5500",
 ]
@@ -96,7 +97,7 @@ app = FastAPI(title="MindEase API", version="3.0.0")
 app.add_middleware(
     CORSMiddleware,
     allow_origins=ALLOWED_ORIGINS,
-    allow_origin_regex=r"^(https?://(localhost|127\.0\.0\.1)(:\d+)?|https://([a-z0-9-]+\.)?vercel\.app|null)$",
+    allow_origin_regex=r"^(https?://(localhost|127\.0\.0\.1)(:\d+)?|https://([a-z0-9-]+\.)*vercel\.app|null)$",
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -180,21 +181,35 @@ MONGO_URI = escape_mongo_uri_credentials(MONGO_URI)
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 security = HTTPBearer()
 
-mongo_client = MongoClient(MONGO_URI)
-mongo_client.admin.command("ping")
-db = mongo_client[MONGO_DB_NAME]
-users_collection = db["users"]
-chat_collection = db["chat_messages"]
-mood_collection = db["mood_logs"]
-journal_collection = db["journal_entries"]
-password_reset_collection = db["password_reset_tokens"]
+DB_INIT_ERROR = ""
 
-users_collection.create_index([("email", ASCENDING)], unique=True)
-chat_collection.create_index([("user_id", ASCENDING), ("created_at", DESCENDING)])
-mood_collection.create_index([("user_id", ASCENDING), ("created_at", DESCENDING)])
-journal_collection.create_index([("user_id", ASCENDING), ("created_at", DESCENDING)])
-password_reset_collection.create_index([("token_hash", ASCENDING)], unique=True)
-password_reset_collection.create_index([("expires_at", ASCENDING)], expireAfterSeconds=0)
+mongo_client = None
+db = None
+users_collection = None
+chat_collection = None
+mood_collection = None
+journal_collection = None
+password_reset_collection = None
+
+try:
+    mongo_client = MongoClient(MONGO_URI)
+    mongo_client.admin.command("ping")
+    db = mongo_client[MONGO_DB_NAME]
+    users_collection = db["users"]
+    chat_collection = db["chat_messages"]
+    mood_collection = db["mood_logs"]
+    journal_collection = db["journal_entries"]
+    password_reset_collection = db["password_reset_tokens"]
+
+    users_collection.create_index([("email", ASCENDING)], unique=True)
+    chat_collection.create_index([("user_id", ASCENDING), ("created_at", DESCENDING)])
+    mood_collection.create_index([("user_id", ASCENDING), ("created_at", DESCENDING)])
+    journal_collection.create_index([("user_id", ASCENDING), ("created_at", DESCENDING)])
+    password_reset_collection.create_index([("token_hash", ASCENDING)], unique=True)
+    password_reset_collection.create_index([("expires_at", ASCENDING)], expireAfterSeconds=0)
+except Exception as exc:
+    DB_INIT_ERROR = repr(exc)
+    print("MONGO INIT ERROR:", DB_INIT_ERROR)
 
 user_limits: dict[str, list[float]] = {}
 MAX_REQUESTS = 30
@@ -229,6 +244,14 @@ def create_access_token(user_id: str, email: str) -> str:
     expire = datetime.now(timezone.utc) + timedelta(minutes=ACCESS_TOKEN_MINUTES)
     payload = {"sub": user_id, "email": email, "exp": expire}
     return jwt.encode(payload, JWT_SECRET_KEY, algorithm=JWT_ALGORITHM)
+
+
+def ensure_db_ready() -> None:
+    if users_collection is None:
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail="Database is unavailable right now. Please try again shortly.",
+        )
 
 
 def hash_reset_token(token: str) -> str:
@@ -434,6 +457,8 @@ async def health_check():
         "status": "ok",
         "service": "mindease-api",
         "allowed_origins": ALLOWED_ORIGINS,
+        "db_connected": users_collection is not None,
+        "db_error": DB_INIT_ERROR[:180] if DB_INIT_ERROR else "",
     }
 
 
@@ -445,6 +470,7 @@ async def dataset_status(user=Depends(get_current_user)):
 @app.post("/api/auth/register")
 async def register_user(payload: RegisterRequest):
     try:
+        ensure_db_ready()
         email = normalize_email(payload.email)
         if "@" not in email or "." not in email.split("@")[-1]:
             raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid email")
@@ -480,6 +506,7 @@ async def register_user(payload: RegisterRequest):
 @app.post("/api/auth/login")
 async def login_user(payload: LoginRequest):
     try:
+        ensure_db_ready()
         email = normalize_email(payload.email)
         user = users_collection.find_one({"email": email})
 
@@ -505,6 +532,7 @@ async def login_user(payload: LoginRequest):
 @app.post("/api/auth/forgot-password")
 async def forgot_password(payload: ForgotPasswordRequest):
     try:
+        ensure_db_ready()
         email = normalize_email(payload.email)
         user = users_collection.find_one({"email": email})
 
@@ -568,6 +596,7 @@ async def forgot_password(payload: ForgotPasswordRequest):
 @app.post("/api/auth/reset-password")
 async def reset_password(payload: ResetPasswordRequest):
     try:
+        ensure_db_ready()
         now = datetime.now(timezone.utc)
         token_hash = hash_reset_token(payload.token)
 
@@ -633,6 +662,7 @@ async def ai_intro(user=Depends(get_current_user)):
 
 @app.post("/api/chat")
 async def chat(payload: ChatRequest, user=Depends(get_current_user)):
+    ensure_db_ready()
     started_at = time()
     user_id = user["user_id"]
 
@@ -728,6 +758,7 @@ async def chat(payload: ChatRequest, user=Depends(get_current_user)):
 
 @app.get("/api/chat/history")
 async def chat_history(limit: int = 30, user=Depends(get_current_user)):
+    ensure_db_ready()
     limit = max(1, min(limit, 100))
     docs = list(
         chat_collection.find({"user_id": user["user_id"]}).sort("created_at", DESCENDING).limit(limit)
@@ -747,6 +778,7 @@ async def chat_history(limit: int = 30, user=Depends(get_current_user)):
 
 @app.post("/api/journal")
 async def save_journal_entry(payload: JournalRequest, user=Depends(get_current_user)):
+    ensure_db_ready()
     content = payload.content.strip()
     if not content:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Journal entry cannot be empty")
@@ -772,6 +804,7 @@ async def save_journal_entry(payload: JournalRequest, user=Depends(get_current_u
 
 @app.get("/api/journal/history")
 async def journal_history(limit: int = 20, offset: int = 0, user=Depends(get_current_user)):
+    ensure_db_ready()
     limit = max(1, min(limit, 100))
     offset = max(0, offset)
     docs = list(
@@ -801,6 +834,7 @@ async def journal_history(limit: int = 20, offset: int = 0, user=Depends(get_cur
 
 @app.put("/api/journal/{entry_id}")
 async def update_journal_entry(entry_id: str, payload: JournalRequest, user=Depends(get_current_user)):
+    ensure_db_ready()
     content = payload.content.strip()
     if not content:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Journal entry cannot be empty")
@@ -827,6 +861,7 @@ async def update_journal_entry(entry_id: str, payload: JournalRequest, user=Depe
 
 @app.delete("/api/journal/{entry_id}")
 async def delete_journal_entry(entry_id: str, user=Depends(get_current_user)):
+    ensure_db_ready()
     try:
         object_id = ObjectId(entry_id)
     except Exception as exc:
@@ -841,6 +876,7 @@ async def delete_journal_entry(entry_id: str, user=Depends(get_current_user)):
 
 @app.post("/api/mood")
 async def log_mood(payload: MoodRequest, user=Depends(get_current_user)):
+    ensure_db_ready()
     allowed = {"happy", "neutral", "sad", "anxious", "stressed", "tired", "grateful"}
     mood_value = payload.mood.strip().lower()
     if mood_value not in allowed:
@@ -861,6 +897,7 @@ async def log_mood(payload: MoodRequest, user=Depends(get_current_user)):
 
 @app.get("/api/dashboard/mood")
 async def mood_dashboard(days: int = 14, user=Depends(get_current_user)):
+    ensure_db_ready()
     days = max(3, min(days, 60))
     cutoff = datetime.now(timezone.utc) - timedelta(days=days)
 

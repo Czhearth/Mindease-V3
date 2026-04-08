@@ -13,12 +13,15 @@ let moodAsked = false
 let isBotTyping = false
 
 
-const API_CANDIDATES = [
-   `${window.location.origin}/api`,
-   "http://127.0.0.1:8000/api",
-   "http://localhost:8000/api",
-   "https://mindease-v3.onrender.com/api",
-]
+const isLocalHost = window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1"
+const API_CANDIDATES = isLocalHost
+   ? [
+         `${window.location.origin}/api`,
+         "http://127.0.0.1:8000/api",
+         "http://localhost:8000/api",
+         "https://mindease-v3.onrender.com/api",
+      ]
+   : ["https://mindease-v3.onrender.com/api"]
 
 async function resolveApiUrl() {
    const cached = localStorage.getItem("mindease_api_url") || ""
