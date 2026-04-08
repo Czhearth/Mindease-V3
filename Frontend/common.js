@@ -1,4 +1,4 @@
-const API_URL = window.ME_API_URL || "http://127.0.0.1:8000/api"
+const API_URL = "https://mindease-v3.onrender.com/api";
 
 function getToken() {
   return localStorage.getItem("mindease_token") || ""

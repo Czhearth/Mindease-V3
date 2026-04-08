@@ -12,7 +12,7 @@ const closeAuth = document.getElementById("closeAuth")
 let mode = "login"
 const params = new URLSearchParams(window.location.search)
 
-const API_URL = window.ME_API_URL || "http://127.0.0.1:8000/api"
+const API_URL = "https://mindease-v3.onrender.com/api";
 
 function getRedirectTarget() {
   const redirect = (params.get("redirect") || "").trim().toLowerCase()
