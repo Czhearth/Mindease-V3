@@ -12,12 +12,9 @@ let sessionId = null
 let moodAsked = false
 let isBotTyping = false
 
-/* 🔥 YOUR BACKEND URL */
-const API_URL = "https://mindease-ai-chatbot-zyts.onrender.com"
 
-/* =========================
-   ADD MESSAGE
-========================= */
+const API_URL = "https://mindease-v3.onrender.com"
+
 
 function addMessage(text, type){
 
@@ -38,9 +35,6 @@ chatMessages.scrollTop = chatMessages.scrollHeight
 
 }
 
-/* =========================
-   SEND BUTTON CONTROL
-========================= */
 
 function setSendState(disabled){
 
@@ -56,9 +50,7 @@ sendBtn.style.cursor = "pointer"
 
 }
 
-/* =========================
-   CRISIS SUPPORT
-========================= */
+
 
 function showCrisisSupport(){
 
@@ -94,9 +86,7 @@ window.open("https://findahelpline.com/", "_blank")
 
 }
 
-/* =========================
-   MOOD BUTTONS
-========================= */
+
 
 function addMoodButtons(){
 
@@ -134,9 +124,7 @@ chatMessages.scrollTop = chatMessages.scrollHeight
 
 }
 
-/* =========================
-   SEND MESSAGE
-========================= */
+
 
 async function sendMessage(){
 
@@ -209,9 +197,6 @@ setSendState(false)
 
 }
 
-/* =========================
-   EVENTS
-========================= */
 
 sendBtn.onclick = sendMessage
 
@@ -225,9 +210,7 @@ sendMessage()
 }
 })
 
-/* =========================
-   QUICK BUTTONS
-========================= */
+
 
 function quickMessage(text){
 
@@ -242,9 +225,7 @@ sendMessage()
 
 }
 
-/* =========================
-   DARK MODE
-========================= */
+
 
 themeToggle.onclick = () => {
 
@@ -268,9 +249,7 @@ document.body.classList.add("dark")
 
 }
 
-/* =========================
-   HOME BUTTON
-========================= */
+
 
 function goHome(){
 
@@ -291,9 +270,6 @@ setSendState(false)
 homeBtn.onclick = goHome
 logoBtn.onclick = goHome
 
-/* =========================
-   EXERCISE POPUP
-========================= */
 
 toolBtn.onclick = (e) => {
 e.stopPropagation()
