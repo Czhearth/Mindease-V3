@@ -88,6 +88,8 @@ let journalHistoryHasMore = false
 let journalHistoryTotal = 0
 let currentJournalEntryId = ""
 const JOURNAL_PAGE_SIZE = 8
+const DASHBOARD_CACHE_KEY = "mindease_dashboard_cache_v1"
+const DASHBOARD_REQUEST_TIMEOUT_MS = 12000
 
 function formatTodayFull() {
   return new Date().toLocaleDateString("en-US", {
@@ -225,6 +227,58 @@ function renderInsights(reminders) {
   if (!insightsList) return
   insightsList.innerHTML = ""
   insightsList.classList.add("hidden")
+}
+
+function readDashboardCache() {
+  try {
+    const raw = localStorage.getItem(DASHBOARD_CACHE_KEY)
+    if (!raw) return null
+    const parsed = JSON.parse(raw)
+    if (!parsed || !Array.isArray(parsed.timeline)) return null
+    return parsed
+  } catch {
+    return null
+  }
+}
+
+function writeDashboardCache(timeline) {
+  try {
+    const payload = {
+      timeline,
+      cached_at: new Date().toISOString(),
+    }
+    localStorage.setItem(DASHBOARD_CACHE_KEY, JSON.stringify(payload))
+  } catch {
+    // Ignore storage failures (private mode/quota).
+  }
+}
+
+async function fetchDashboardDataWithTimeout() {
+  const controller = new AbortController()
+  const timeoutId = setTimeout(() => controller.abort(), DASHBOARD_REQUEST_TIMEOUT_MS)
+
+  try {
+    const response = await fetch(`${API_URL}/dashboard/mood?days=21`, {
+      method: "GET",
+      headers: authHeaders(),
+      signal: controller.signal,
+    })
+
+    if (response.status === 401) {
+      clearAuth()
+      window.location.href = "index.html"
+      throw new Error("Unauthorized")
+    }
+
+    const data = await response.json()
+    if (!response.ok) {
+      throw new Error(data.detail || "Request failed")
+    }
+
+    return data
+  } finally {
+    clearTimeout(timeoutId)
+  }
 }
 
 function setSelectedActivity(activityId) {
@@ -844,14 +898,32 @@ async function loadDashboard() {
   if (dashboardDate) dashboardDate.innerText = formatTodayFull()
   if (overviewDateInline) overviewDateInline.innerText = formatTodayShort()
 
+  const cached = readDashboardCache()
+  if (cached) {
+    renderSummaryCards(cached.timeline)
+    renderMoodGraph(cached.timeline)
+    renderInsights([])
+    if (reminderBanner) reminderBanner.innerText = "Showing last saved dashboard while refreshing..."
+  }
+
   try {
-    const data = await apiGet("/dashboard/mood?days=21")
+    if (!cached && reminderBanner) {
+      reminderBanner.innerText = "Loading latest dashboard data..."
+    }
+
+    const data = await fetchDashboardDataWithTimeout()
     const timeline = data.timeline || []
     renderSummaryCards(timeline)
     renderMoodGraph(timeline)
     renderInsights(data.reminders || [])
-    if (reminderBanner) reminderBanner.innerText = "Last updated: 2:46 AM"
+    writeDashboardCache(timeline)
+    if (reminderBanner) reminderBanner.innerText = `Last updated: ${new Date().toLocaleTimeString()}`
   } catch {
+    if (cached) {
+      if (reminderBanner) reminderBanner.innerText = "Network is slow. Showing your last saved dashboard."
+      return
+    }
+
     if (reminderBanner) reminderBanner.innerText = "Unable to load dashboard right now."
     renderSummaryCards([])
     renderMoodGraph([])
