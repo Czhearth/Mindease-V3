@@ -115,7 +115,21 @@ forgotPasswordBtn.onclick = async () => {
       return
     }
 
+    const data = await res.json().catch(() => ({}))
     authMessage.classList.add("ok")
+    if (data.reset_link) {
+      authMessage.innerText = "Email is not configured on this environment, but the reset link is ready below."
+      const link = document.createElement("a")
+      link.href = data.reset_link
+      link.textContent = "Open password reset link"
+      link.target = "_blank"
+      link.rel = "noreferrer"
+      link.className = "reset-link"
+      authMessage.appendChild(document.createElement("br"))
+      authMessage.appendChild(link)
+      return
+    }
+
     authMessage.innerText = "If your email exists, a reset link has been sent."
   } catch (err) {
     console.error("FORGOT PASSWORD ERROR:", err)

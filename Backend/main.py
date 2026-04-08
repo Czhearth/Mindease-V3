@@ -545,15 +545,21 @@ async def forgot_password(payload: ForgotPasswordRequest):
         )
 
         reset_link = build_password_reset_link(raw_token)
+        email_sent = False
         try:
-            send_password_reset_email(email, reset_link)
+            email_sent = send_password_reset_email(email, reset_link)
         except Exception as exc:
             print("FORGOT PASSWORD EMAIL ERROR:", repr(exc))
 
-        return {
+        response = {
             "status": "ok",
             "message": "If this email is registered, a password reset link has been sent.",
         }
+        if not email_sent:
+            response["reset_link"] = reset_link
+            response["delivery_method"] = "manual"
+
+        return response
     except Exception as exc:
         print("FORGOT PASSWORD ERROR:", repr(exc))
         raise HTTPException(status_code=500, detail="Unable to process forgot password request") from exc

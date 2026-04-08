@@ -34,3 +34,15 @@ body.dark .auth-card {
 body.dark .auth-card p {
   color: var(--text-dark-soft);
 }
+
+.reset-link {
+  display: inline-block;
+  margin-top: 10px;
+  color: #2f7da0;
+  font-weight: 700;
+  text-decoration: underline;
+}
+
+body.dark .reset-link {
+  color: #95d7c4;
+}
