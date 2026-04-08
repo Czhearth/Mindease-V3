@@ -9,6 +9,6 @@
       return
     }
 
-    window.location.href = "index.html?auth=1&redirect=dashboard"
+    window.location.href = "auth.html?redirect=dashboard"
   })
 })()

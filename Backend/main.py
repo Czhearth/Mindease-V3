@@ -2,8 +2,12 @@ import os
 import re
 import random
 import asyncio
+import secrets
+import hashlib
+import smtplib
 from collections import Counter
 from datetime import datetime, timedelta, timezone
+from email.message import EmailMessage
 from time import time
 from urllib.parse import quote_plus, unquote_plus
 
@@ -29,10 +33,19 @@ OPENROUTER_API_KEY = os.getenv("OPENROUTER_API_KEY", "")
 JWT_SECRET_KEY = os.getenv("JWT_SECRET_KEY", "change-this-secret-in-production")
 JWT_ALGORITHM = "HS256"
 ACCESS_TOKEN_MINUTES = 60 * 24
+RESET_TOKEN_MINUTES = int(os.getenv("RESET_TOKEN_MINUTES", "30"))
 MONGO_URI = os.getenv("MONGO_URI", "mongodb://localhost:27017")
 MONGO_DB_NAME = os.getenv("MONGO_DB_NAME", "mindease")
 INTENTS_DATASET_PATH = os.getenv("INTENTS_DATASET_PATH", "dataset/intents.json")
 AUTO_MOOD_INTERVAL_MINUTES = int(os.getenv("AUTO_MOOD_INTERVAL_MINUTES", "10"))
+RESET_PASSWORD_BASE_URL = os.getenv("RESET_PASSWORD_BASE_URL", "https://mindeasev3.vercel.app/reset-password.html")
+
+SMTP_HOST = os.getenv("SMTP_HOST", "")
+SMTP_PORT = int(os.getenv("SMTP_PORT", "587"))
+SMTP_USER = os.getenv("SMTP_USER", "")
+SMTP_PASS = os.getenv("SMTP_PASS", "")
+SMTP_FROM_EMAIL = os.getenv("SMTP_FROM_EMAIL", SMTP_USER)
+SMTP_USE_TLS = os.getenv("SMTP_USE_TLS", "true").lower() == "true"
 
 
 def parse_frontend_origins(raw_value: str) -> list[str]:
@@ -119,6 +132,15 @@ class LoginRequest(BaseModel):
     password: str
 
 
+class ForgotPasswordRequest(BaseModel):
+    email: str = Field(min_length=5, max_length=120)
+
+
+class ResetPasswordRequest(BaseModel):
+    token: str = Field(min_length=20, max_length=500)
+    new_password: str = Field(min_length=8, max_length=120)
+
+
 class ChatRequest(BaseModel):
     message: str = Field(min_length=1, max_length=1200)
 
@@ -165,11 +187,14 @@ users_collection = db["users"]
 chat_collection = db["chat_messages"]
 mood_collection = db["mood_logs"]
 journal_collection = db["journal_entries"]
+password_reset_collection = db["password_reset_tokens"]
 
 users_collection.create_index([("email", ASCENDING)], unique=True)
 chat_collection.create_index([("user_id", ASCENDING), ("created_at", DESCENDING)])
 mood_collection.create_index([("user_id", ASCENDING), ("created_at", DESCENDING)])
 journal_collection.create_index([("user_id", ASCENDING), ("created_at", DESCENDING)])
+password_reset_collection.create_index([("token_hash", ASCENDING)], unique=True)
+password_reset_collection.create_index([("expires_at", ASCENDING)], expireAfterSeconds=0)
 
 user_limits: dict[str, list[float]] = {}
 MAX_REQUESTS = 30
@@ -204,6 +229,41 @@ def create_access_token(user_id: str, email: str) -> str:
     expire = datetime.now(timezone.utc) + timedelta(minutes=ACCESS_TOKEN_MINUTES)
     payload = {"sub": user_id, "email": email, "exp": expire}
     return jwt.encode(payload, JWT_SECRET_KEY, algorithm=JWT_ALGORITHM)
+
+
+def hash_reset_token(token: str) -> str:
+    return hashlib.sha256(token.encode("utf-8")).hexdigest()
+
+
+def build_password_reset_link(token: str) -> str:
+    separator = "&" if "?" in RESET_PASSWORD_BASE_URL else "?"
+    return f"{RESET_PASSWORD_BASE_URL}{separator}token={quote_plus(token)}"
+
+
+def send_password_reset_email(recipient_email: str, reset_link: str) -> bool:
+    if not SMTP_HOST or not SMTP_FROM_EMAIL:
+        print("RESET EMAIL CONFIG MISSING: SMTP_HOST/SMTP_FROM_EMAIL not set")
+        print("PASSWORD RESET LINK (debug):", reset_link)
+        return False
+
+    message = EmailMessage()
+    message["Subject"] = "MindEase Password Reset"
+    message["From"] = SMTP_FROM_EMAIL
+    message["To"] = recipient_email
+    message.set_content(
+        "We received a request to reset your MindEase password.\n\n"
+        f"Use this secure link to reset it: {reset_link}\n\n"
+        f"This link will expire in {RESET_TOKEN_MINUTES} minutes.\n"
+        "If you did not request this, you can ignore this email."
+    )
+
+    with smtplib.SMTP(SMTP_HOST, SMTP_PORT, timeout=20) as server:
+        if SMTP_USE_TLS:
+            server.starttls()
+        if SMTP_USER and SMTP_PASS:
+            server.login(SMTP_USER, SMTP_PASS)
+        server.send_message(message)
+    return True
 
 
 def is_rate_limited(user_id: str) -> bool:
@@ -440,6 +500,113 @@ async def login_user(payload: LoginRequest):
     except Exception as exc:
         print("LOGIN ERROR:", repr(exc))
         raise HTTPException(status_code=500, detail="Login failed on server") from exc
+
+
+@app.post("/api/auth/forgot-password")
+async def forgot_password(payload: ForgotPasswordRequest):
+    try:
+        email = normalize_email(payload.email)
+        user = users_collection.find_one({"email": email})
+
+        # Return a neutral success response to avoid leaking account existence.
+        if not user:
+            return {
+                "status": "ok",
+                "message": "If this email is registered, a password reset link has been sent.",
+            }
+
+        raw_token = secrets.token_urlsafe(48)
+        token_hash = hash_reset_token(raw_token)
+        now = datetime.now(timezone.utc)
+        expires_at = now + timedelta(minutes=RESET_TOKEN_MINUTES)
+
+        password_reset_collection.update_many(
+            {
+                "user_id": str(user["_id"]),
+                "used": False,
+            },
+            {
+                "$set": {
+                    "used": True,
+                    "used_at": now,
+                }
+            },
+        )
+
+        password_reset_collection.insert_one(
+            {
+                "user_id": str(user["_id"]),
+                "email": email,
+                "token_hash": token_hash,
+                "used": False,
+                "created_at": now,
+                "expires_at": expires_at,
+            }
+        )
+
+        reset_link = build_password_reset_link(raw_token)
+        try:
+            send_password_reset_email(email, reset_link)
+        except Exception as exc:
+            print("FORGOT PASSWORD EMAIL ERROR:", repr(exc))
+
+        return {
+            "status": "ok",
+            "message": "If this email is registered, a password reset link has been sent.",
+        }
+    except Exception as exc:
+        print("FORGOT PASSWORD ERROR:", repr(exc))
+        raise HTTPException(status_code=500, detail="Unable to process forgot password request") from exc
+
+
+@app.post("/api/auth/reset-password")
+async def reset_password(payload: ResetPasswordRequest):
+    try:
+        now = datetime.now(timezone.utc)
+        token_hash = hash_reset_token(payload.token)
+
+        reset_doc = password_reset_collection.find_one(
+            {
+                "token_hash": token_hash,
+                "used": False,
+                "expires_at": {"$gte": now},
+            }
+        )
+        if not reset_doc:
+            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Reset link is invalid or expired")
+
+        user_id = reset_doc.get("user_id")
+        if not user_id:
+            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Reset link is invalid")
+
+        update_result = users_collection.update_one(
+            {"_id": ObjectId(user_id)},
+            {
+                "$set": {
+                    "password_hash": hash_password(payload.new_password),
+                    "password_updated_at": now,
+                }
+            },
+        )
+        if update_result.matched_count == 0:
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found")
+
+        password_reset_collection.update_one(
+            {"_id": reset_doc["_id"]},
+            {
+                "$set": {
+                    "used": True,
+                    "used_at": now,
+                }
+            },
+        )
+
+        return {"status": "ok", "message": "Password reset successful"}
+    except HTTPException:
+        raise
+    except Exception as exc:
+        print("RESET PASSWORD ERROR:", repr(exc))
+        raise HTTPException(status_code=500, detail="Unable to reset password") from exc
 
 
 @app.get("/api/intro")

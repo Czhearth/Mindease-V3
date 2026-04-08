@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Sign In | MindEase</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Manrope:wght@400;500;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles/base.css">
+  <link rel="stylesheet" href="styles/auth-page.css">
+</head>
+<body class="auth-page">
+  <div class="ambient-shape one"></div>
+  <div class="ambient-shape two"></div>
+
+  <header class="topbar">
+    <div class="brand-wrap">
+      <img src="logo.jpg" alt="MindEase logo" class="brand-logo">
+      <div class="brand-text">MindEase V3</div>
+    </div>
+    <nav class="top-nav">
+      <a href="features.html">Features</a>
+      <a href="about.html">About MindEase</a>
+    </nav>
+    <div class="header-right">
+      <button id="themeToggle" class="theme-toggle" type="button" aria-label="Toggle theme">🌙</button>
+      <a href="index.html" class="ghost-btn">Home</a>
+    </div>
+  </header>
+
+  <main class="auth-page-shell">
+    <section class="auth-card reveal">
+      <h1>Welcome Back</h1>
+      <p>Log in or create your account to continue your MindEase journey.</p>
+
+      <div class="auth-switch">
+        <button id="tabLogin" class="active" type="button">Login</button>
+        <button id="tabSignup" type="button">Sign Up</button>
+      </div>
+
+      <form id="authForm" class="auth-form">
+        <label id="nameFieldWrap" class="hidden">
+          Full Name
+          <input id="fullName" type="text" placeholder="Alex Jordan">
+        </label>
+
+        <label>
+          Email
+          <input id="email" type="email" required placeholder="you@example.com">
+        </label>
+
+        <label>
+          Password
+          <input id="password" type="password" required minlength="8" placeholder="Minimum 8 characters">
+        </label>
+
+        <button id="forgotPasswordBtn" type="button" class="text-btn">Forgot Password?</button>
+        <button id="authSubmit" type="submit" class="primary-btn">Login</button>
+      </form>
+
+      <p id="authMessage" class="form-message"></p>
+    </section>
+  </main>
+
+  <footer class="site-footer">Copyright 2026 MindEase. All rights reserved.</footer>
+
+  <script src="theme.js"></script>
+  <script src="auth-page.js"></script>
+</body>
+</html>

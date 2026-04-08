@@ -49,6 +49,20 @@ function bindBrandRedirect() {
   }
 }
 
+function bindHeaderAuthLink() {
+  const authLink = document.getElementById("headerAuthLink")
+  if (!authLink) return
+
+  const token = getToken()
+  if (token) {
+    authLink.textContent = "Dashboard"
+    authLink.setAttribute("href", "dashboard.html")
+  } else {
+    authLink.textContent = "Sign In"
+    authLink.setAttribute("href", "auth.html?redirect=dashboard")
+  }
+}
+
 async function apiGet(path, useAuth = true) {
   const res = await fetch(`${API_URL}${path}`, {
     method: "GET",
@@ -115,4 +129,7 @@ async function apiDelete(path, useAuth = true) {
   return data
 }
 
-document.addEventListener("DOMContentLoaded", bindBrandRedirect)
+document.addEventListener("DOMContentLoaded", () => {
+  bindBrandRedirect()
+  bindHeaderAuthLink()
+})

@@ -1,0 +1,36 @@
+.auth-page-shell {
+  min-height: calc(100vh - 180px);
+  display: grid;
+  place-items: center;
+  padding: 32px 16px 42px;
+}
+
+.auth-card {
+  width: min(92vw, 460px);
+  border-radius: var(--radius-xl);
+  border: 1px solid rgba(140, 188, 213, 0.36);
+  background: linear-gradient(170deg, rgba(255, 255, 255, 0.88), rgba(255, 255, 255, 0.74));
+  backdrop-filter: blur(16px) saturate(1.08);
+  box-shadow: var(--shadow-lg);
+  padding: 28px;
+  display: grid;
+  gap: 14px;
+}
+
+.auth-card h1 {
+  font-size: clamp(30px, 4vw, 42px);
+  line-height: 1.08;
+}
+
+.auth-card p {
+  color: var(--text-soft);
+}
+
+body.dark .auth-card {
+  border-color: rgba(126, 178, 205, 0.3);
+  background: linear-gradient(170deg, rgba(12, 31, 45, 0.9), rgba(10, 24, 36, 0.84));
+}
+
+body.dark .auth-card p {
+  color: var(--text-dark-soft);
+}

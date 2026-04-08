@@ -778,6 +778,24 @@ body.dark .typing-status {
   gap: 12px;
 }
 
+.text-btn {
+  justify-self: end;
+  background: transparent;
+  border: none;
+  color: #2f7da0;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.text-btn:hover {
+  text-decoration: underline;
+}
+
+body.dark .text-btn {
+  color: #95d7c4;
+}
+
 label {
   display: grid;
   gap: 6px;

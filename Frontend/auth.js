@@ -8,6 +8,8 @@ const authModal = document.getElementById("authModal")
 const beginBtn = document.getElementById("beginBtn")
 const headerSignIn = document.getElementById("headerSignIn")
 const closeAuth = document.getElementById("closeAuth")
+const forgotPasswordBtn = document.getElementById("forgotPasswordBtn")
+const AUTH_PAGE = "auth.html"
 
 let mode = "login"
 const params = new URLSearchParams(window.location.search)
@@ -30,9 +32,16 @@ tabSignup.classList.toggle("active", signUp)
 nameFieldWrap.classList.toggle("hidden", !signUp)
 authSubmit.innerText = signUp ? "Create Account" : "Login"
 authMessage.innerText = ""
+if (forgotPasswordBtn) {
+forgotPasswordBtn.classList.toggle("hidden", signUp)
+}
 }
 
 function showAuthModal() {
+if (!authModal) {
+window.location.href = `${AUTH_PAGE}?redirect=dashboard`
+return
+}
 authModal.classList.remove("hidden")
 document.body.style.overflow = "hidden"
 }
@@ -67,7 +76,9 @@ window.location.href = "index.html"
 }
 } else {
 headerSignIn.innerText = "Sign In"
-headerSignIn.onclick = showAuthModal
+headerSignIn.onclick = () => {
+window.location.href = `${AUTH_PAGE}?redirect=dashboard`
+}
 }
 }
 
@@ -149,14 +160,49 @@ const token = localStorage.getItem("mindease_token") || ""
 if (token) {
 window.location.href = "dashboard.html"
 } else {
-showAuthModal()
+window.location.href = `${AUTH_PAGE}?redirect=dashboard`
 }
 }
 
 closeAuth.onclick = hideAuthModal
+
+if (forgotPasswordBtn) {
+forgotPasswordBtn.onclick = async () => {
+const emailInput = document.getElementById("email")
+const email = (emailInput?.value || "").trim()
+
+if (!email) {
+authMessage.classList.remove("ok")
+authMessage.innerText = "Enter your email first, then click Forgot Password."
+return
+}
+
+try {
+const res = await fetch(`${API_URL}/auth/forgot-password`, {
+method: "POST",
+headers: { "Content-Type": "application/json" },
+body: JSON.stringify({ email })
+})
+
+if (!res.ok) {
+authMessage.classList.remove("ok")
+authMessage.innerText = "Could not send reset link. Please try again."
+return
+}
+
+authMessage.classList.add("ok")
+authMessage.innerText = "If your email exists, a reset link has been sent."
+} catch (err) {
+console.error("FORGOT PASSWORD ERROR:", err)
+authMessage.classList.remove("ok")
+authMessage.innerText = "Could not send reset link. Please try again."
+}
+}
+}
 
 authModal.addEventListener("click", (e) => {
 if (e.target === authModal) hideAuthModal()
 })
 
 updateHomeAuthButton()
+setMode("login")
