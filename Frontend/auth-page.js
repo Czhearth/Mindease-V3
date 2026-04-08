@@ -5,6 +5,8 @@ const authSubmit = document.getElementById("authSubmit")
 const authForm = document.getElementById("authForm")
 const authMessage = document.getElementById("authMessage")
 const forgotPasswordBtn = document.getElementById("forgotPasswordBtn")
+const passwordInput = document.getElementById("password")
+const showPasswordToggle = document.getElementById("showPasswordToggle")
 
 let mode = "login"
 const params = new URLSearchParams(window.location.search)
@@ -187,5 +189,11 @@ forgotPasswordBtn.onclick = async () => {
 
 tabLogin.onclick = () => setMode("login")
 tabSignup.onclick = () => setMode("signup")
+
+if (showPasswordToggle && passwordInput) {
+  showPasswordToggle.addEventListener("change", () => {
+    passwordInput.type = showPasswordToggle.checked ? "text" : "password"
+  })
+}
 
 setMode("login")

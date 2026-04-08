@@ -796,6 +796,25 @@ body.dark .text-btn {
   color: #95d7c4;
 }
 
+.password-visibility-row {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-soft);
+}
+
+.password-visibility-row input {
+  width: 14px;
+  height: 14px;
+  margin: 0;
+}
+
+body.dark .password-visibility-row {
+  color: var(--text-dark-soft);
+}
+
 label {
   display: grid;
   gap: 6px;

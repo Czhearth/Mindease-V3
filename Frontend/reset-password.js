@@ -2,6 +2,7 @@ const resetForm = document.getElementById("resetForm")
 const resetMessage = document.getElementById("resetMessage")
 const newPasswordInput = document.getElementById("newPassword")
 const confirmPasswordInput = document.getElementById("confirmPassword")
+const showResetPasswordsToggle = document.getElementById("showResetPasswordsToggle")
 
 const params = new URLSearchParams(window.location.search)
 const token = (params.get("token") || "").trim()
@@ -9,6 +10,14 @@ const token = (params.get("token") || "").trim()
 if (!token) {
   resetMessage.innerText = "This reset link is invalid. Request a new one from Sign In."
   resetForm.querySelector("button[type='submit']").disabled = true
+}
+
+if (showResetPasswordsToggle) {
+  showResetPasswordsToggle.addEventListener("change", () => {
+    const inputType = showResetPasswordsToggle.checked ? "text" : "password"
+    newPasswordInput.type = inputType
+    confirmPasswordInput.type = inputType
+  })
 }
 
 resetForm.addEventListener("submit", async (event) => {

@@ -9,6 +9,8 @@ const beginBtn = document.getElementById("beginBtn")
 const headerSignIn = document.getElementById("headerSignIn")
 const closeAuth = document.getElementById("closeAuth")
 const forgotPasswordBtn = document.getElementById("forgotPasswordBtn")
+const passwordInput = document.getElementById("password")
+const showPasswordToggle = document.getElementById("showPasswordToggle")
 const AUTH_PAGE = "auth.html"
 
 let mode = "login"
@@ -184,6 +186,12 @@ authMessage.innerText = "Cannot connect to server. Try again."
 
 tabLogin.onclick = () => setMode("login")
 tabSignup.onclick = () => setMode("signup")
+
+if (showPasswordToggle && passwordInput) {
+showPasswordToggle.addEventListener("change", () => {
+passwordInput.type = showPasswordToggle.checked ? "text" : "password"
+})
+}
 
 beginBtn.onclick = () => {
 const token = localStorage.getItem("mindease_token") || ""
