@@ -38,6 +38,55 @@ async function apiBaseUrl() {
   return resolveApiUrl()
 }
 
+const REQUEST_TIMEOUT_MS = 15000
+
+async function safeJson(response) {
+  try {
+    return await response.json()
+  } catch {
+    return {}
+  }
+}
+
+async function apiRequest(path, method, body, useAuth = true) {
+  const baseUrl = await apiBaseUrl()
+  const controller = new AbortController()
+  const timeoutId = setTimeout(() => controller.abort(), REQUEST_TIMEOUT_MS)
+
+  try {
+    const res = await fetch(`${baseUrl}${path}`, {
+      method,
+      headers: useAuth ? authHeaders() : { "Content-Type": "application/json" },
+      body: body !== undefined ? JSON.stringify(body) : undefined,
+      signal: controller.signal,
+    })
+
+    const data = await safeJson(res)
+
+    if (res.status === 401) {
+      clearAuth()
+      window.location.href = "index.html"
+      throw new Error("Unauthorized")
+    }
+
+    if (!res.ok) {
+      if (res.status >= 500) {
+        throw new Error("Server is temporarily unavailable")
+      }
+      throw new Error(data.detail || "Request failed")
+    }
+
+    return data
+  } catch (err) {
+    if (err?.name === "AbortError") {
+      throw new Error("Request timed out")
+    }
+    throw err
+  } finally {
+    clearTimeout(timeoutId)
+  }
+}
+
 function getToken() {
   return localStorage.getItem("mindease_token") || ""
 }
@@ -102,73 +151,19 @@ function bindHeaderAuthLink() {
 }
 
 async function apiGet(path, useAuth = true) {
-  const baseUrl = await apiBaseUrl()
-  const res = await fetch(`${baseUrl}${path}`, {
-    method: "GET",
-    headers: useAuth ? authHeaders() : { "Content-Type": "application/json" }
-  })
-  if (res.status === 401) {
-    clearAuth()
-    window.location.href = "index.html"
-    throw new Error("Unauthorized")
-  }
-  return res.json()
+  return apiRequest(path, "GET", undefined, useAuth)
 }
 
 async function apiPost(path, body, useAuth = true) {
-  const baseUrl = await apiBaseUrl()
-  const res = await fetch(`${baseUrl}${path}`, {
-    method: "POST",
-    headers: useAuth ? authHeaders() : { "Content-Type": "application/json" },
-    body: JSON.stringify(body)
-  })
-  const data = await res.json()
-  if (res.status === 401) {
-    clearAuth()
-    window.location.href = "index.html"
-    throw new Error("Unauthorized")
-  }
-  if (!res.ok) {
-    throw new Error(data.detail || "Request failed")
-  }
-  return data
+  return apiRequest(path, "POST", body, useAuth)
 }
 
 async function apiPut(path, body, useAuth = true) {
-  const baseUrl = await apiBaseUrl()
-  const res = await fetch(`${baseUrl}${path}`, {
-    method: "PUT",
-    headers: useAuth ? authHeaders() : { "Content-Type": "application/json" },
-    body: JSON.stringify(body)
-  })
-  const data = await res.json()
-  if (res.status === 401) {
-    clearAuth()
-    window.location.href = "index.html"
-    throw new Error("Unauthorized")
-  }
-  if (!res.ok) {
-    throw new Error(data.detail || "Request failed")
-  }
-  return data
+  return apiRequest(path, "PUT", body, useAuth)
 }
 
 async function apiDelete(path, useAuth = true) {
-  const baseUrl = await apiBaseUrl()
-  const res = await fetch(`${baseUrl}${path}`, {
-    method: "DELETE",
-    headers: useAuth ? authHeaders() : { "Content-Type": "application/json" }
-  })
-  const data = await res.json().catch(() => ({}))
-  if (res.status === 401) {
-    clearAuth()
-    window.location.href = "index.html"
-    throw new Error("Unauthorized")
-  }
-  if (!res.ok) {
-    throw new Error(data.detail || "Request failed")
-  }
-  return data
+  return apiRequest(path, "DELETE", undefined, useAuth)
 }
 
 document.addEventListener("DOMContentLoaded", () => {

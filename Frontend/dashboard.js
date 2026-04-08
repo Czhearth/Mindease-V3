@@ -226,7 +226,25 @@ function renderSummaryCards(timeline) {
 function renderInsights(reminders) {
   if (!insightsList) return
   insightsList.innerHTML = ""
-  insightsList.classList.add("hidden")
+
+  const items = Array.isArray(reminders) ? reminders.filter(Boolean) : []
+  if (!items.length) {
+    const empty = document.createElement("article")
+    empty.className = "insight-item"
+    empty.innerHTML = "<h3>Insights will appear soon</h3><p>Keep chatting and logging moods to unlock personalized recommendations.</p>"
+    insightsList.appendChild(empty)
+    insightsList.classList.remove("hidden")
+    return
+  }
+
+  items.forEach((reminder) => {
+    const card = document.createElement("article")
+    card.className = "insight-item"
+    card.innerHTML = `<h3>Recommendation</h3><p>${reminder}</p>`
+    insightsList.appendChild(card)
+  })
+
+  insightsList.classList.remove("hidden")
 }
 
 function readDashboardCache() {

@@ -354,7 +354,8 @@ async function sendMessage() {
     addToActiveSession("assistant", data.reply)
     updateActiveSessionFeeling(data.analysis)
   } catch (err) {
-    chatError.innerText = err.message || "Unable to connect to server."
+    const reason = err?.message || "Unable to connect to server."
+    chatError.innerText = `${reason} If this keeps happening, the backend may be restarting. Please try again in a few seconds.`
   } finally {
     const elapsed = Date.now() - startedAt
     const minVisibleMs = 1100
