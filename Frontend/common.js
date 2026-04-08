@@ -1,4 +1,39 @@
-const API_URL = "https://mindease-v3.onrender.com/api";
+const API_CANDIDATES = [
+  `${window.location.origin}/api`,
+  "http://127.0.0.1:8000/api",
+  "http://localhost:8000/api",
+  "https://mindease-v3.onrender.com/api",
+]
+
+async function resolveApiUrl() {
+  const cached = localStorage.getItem("mindease_api_url") || ""
+  if (cached) {
+    try {
+      const res = await fetch(`${cached}/health`, { method: "GET" })
+      if (res.ok) return cached
+    } catch {
+      localStorage.removeItem("mindease_api_url")
+    }
+  }
+
+  for (const candidate of API_CANDIDATES) {
+    try {
+      const res = await fetch(`${candidate}/health`, { method: "GET" })
+      if (res.ok) {
+        localStorage.setItem("mindease_api_url", candidate)
+        return candidate
+      }
+    } catch {
+      continue
+    }
+  }
+
+  return API_CANDIDATES[API_CANDIDATES.length - 1]
+}
+
+async function apiBaseUrl() {
+  return resolveApiUrl()
+}
 
 function getToken() {
   return localStorage.getItem("mindease_token") || ""
@@ -64,7 +99,8 @@ function bindHeaderAuthLink() {
 }
 
 async function apiGet(path, useAuth = true) {
-  const res = await fetch(`${API_URL}${path}`, {
+  const baseUrl = await apiBaseUrl()
+  const res = await fetch(`${baseUrl}${path}`, {
     method: "GET",
     headers: useAuth ? authHeaders() : { "Content-Type": "application/json" }
   })
@@ -77,7 +113,8 @@ async function apiGet(path, useAuth = true) {
 }
 
 async function apiPost(path, body, useAuth = true) {
-  const res = await fetch(`${API_URL}${path}`, {
+  const baseUrl = await apiBaseUrl()
+  const res = await fetch(`${baseUrl}${path}`, {
     method: "POST",
     headers: useAuth ? authHeaders() : { "Content-Type": "application/json" },
     body: JSON.stringify(body)
@@ -95,7 +132,8 @@ async function apiPost(path, body, useAuth = true) {
 }
 
 async function apiPut(path, body, useAuth = true) {
-  const res = await fetch(`${API_URL}${path}`, {
+  const baseUrl = await apiBaseUrl()
+  const res = await fetch(`${baseUrl}${path}`, {
     method: "PUT",
     headers: useAuth ? authHeaders() : { "Content-Type": "application/json" },
     body: JSON.stringify(body)
@@ -113,7 +151,8 @@ async function apiPut(path, body, useAuth = true) {
 }
 
 async function apiDelete(path, useAuth = true) {
-  const res = await fetch(`${API_URL}${path}`, {
+  const baseUrl = await apiBaseUrl()
+  const res = await fetch(`${baseUrl}${path}`, {
     method: "DELETE",
     headers: useAuth ? authHeaders() : { "Content-Type": "application/json" }
   })

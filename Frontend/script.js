@@ -13,7 +13,38 @@ let moodAsked = false
 let isBotTyping = false
 
 
-const API_URL = "https://mindease-v3.onrender.com/api";
+const API_CANDIDATES = [
+   `${window.location.origin}/api`,
+   "http://127.0.0.1:8000/api",
+   "http://localhost:8000/api",
+   "https://mindease-v3.onrender.com/api",
+]
+
+async function resolveApiUrl() {
+   const cached = localStorage.getItem("mindease_api_url") || ""
+   if (cached) {
+      try {
+         const res = await fetch(`${cached}/health`, { method: "GET" })
+         if (res.ok) return cached
+      } catch {
+         localStorage.removeItem("mindease_api_url")
+      }
+   }
+
+   for (const candidate of API_CANDIDATES) {
+      try {
+         const res = await fetch(`${candidate}/health`, { method: "GET" })
+         if (res.ok) {
+            localStorage.setItem("mindease_api_url", candidate)
+            return candidate
+         }
+      } catch {
+         continue
+      }
+   }
+
+   return API_CANDIDATES[API_CANDIDATES.length - 1]
+}
 
 
 function addMessage(text, type){
@@ -152,8 +183,9 @@ chatMessages.appendChild(typingBubble)
 chatMessages.scrollTop = chatMessages.scrollHeight
 
 try{
+const apiUrl = await resolveApiUrl()
 
-const res = await fetch(`${API_URL}/chat`,{
+const res = await fetch(`${apiUrl}/chat`,{
 method:"POST",
 headers:{
 "Content-Type":"application/json"
@@ -332,6 +364,7 @@ addMessage("Thanks for sharing that. Want to tell me more?", "ai")
 }, 1000)
 
 try{
+const apiUrl = await resolveApiUrl()
 await fetch(`${API_URL}/mood`,{
 method:"POST",
 headers:{

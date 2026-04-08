@@ -8,7 +8,49 @@ const forgotPasswordBtn = document.getElementById("forgotPasswordBtn")
 
 let mode = "login"
 const params = new URLSearchParams(window.location.search)
-const API_URL = "https://mindease-v3.onrender.com/api"
+const API_CANDIDATES = [
+  `${window.location.origin}/api`,
+  "http://127.0.0.1:8000/api",
+  "http://localhost:8000/api",
+  "https://mindease-v3.onrender.com/api",
+]
+
+async function resolveApiUrl() {
+  const cached = localStorage.getItem("mindease_api_url") || ""
+  if (cached) {
+    try {
+      const res = await fetch(`${cached}/health`, { method: "GET" })
+      if (res.ok) return cached
+    } catch {
+      localStorage.removeItem("mindease_api_url")
+    }
+  }
+
+  for (const candidate of API_CANDIDATES) {
+    try {
+      const res = await fetch(`${candidate}/health`, { method: "GET" })
+      if (res.ok) {
+        localStorage.setItem("mindease_api_url", candidate)
+        return candidate
+      }
+    } catch {
+      continue
+    }
+  }
+
+  return API_CANDIDATES[API_CANDIDATES.length - 1]
+}
+
+function withTimeout(promise, timeoutMs = 12000) {
+  const controller = new AbortController()
+  const timeoutId = setTimeout(() => controller.abort(), timeoutMs)
+  return Promise.race([
+    promise(controller.signal).finally(() => clearTimeout(timeoutId)),
+    new Promise((_, reject) => {
+      setTimeout(() => reject(new Error("Request timed out")), timeoutMs)
+    })
+  ])
+}
 
 function getRedirectTarget() {
   const redirect = (params.get("redirect") || "").trim().toLowerCase()
@@ -48,18 +90,20 @@ authForm.onsubmit = async (event) => {
   }
 
   try {
+    const apiUrl = await resolveApiUrl()
     const endpoint = mode === "signup" ? "/auth/register" : "/auth/login"
     const body = mode === "signup"
       ? { full_name: fullName, email, password }
       : { email, password }
 
-    const res = await fetch(`${API_URL}${endpoint}`, {
+    const res = await withTimeout(async (signal) => fetch(`${apiUrl}${endpoint}`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json"
       },
-      body: JSON.stringify(body)
-    })
+      body: JSON.stringify(body),
+      signal,
+    }))
 
     let data
     try {
@@ -104,7 +148,8 @@ forgotPasswordBtn.onclick = async () => {
   }
 
   try {
-    const res = await fetch(`${API_URL}/auth/forgot-password`, {
+    const apiUrl = await resolveApiUrl()
+    const res = await fetch(`${apiUrl}/auth/forgot-password`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ email })

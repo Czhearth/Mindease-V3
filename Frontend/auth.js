@@ -13,9 +13,38 @@ const AUTH_PAGE = "auth.html"
 
 let mode = "login"
 const params = new URLSearchParams(window.location.search)
+const API_CANDIDATES = [
+window.location.origin + "/api",
+"http://127.0.0.1:8000/api",
+"http://localhost:8000/api",
+"https://mindease-v3.onrender.com/api"
+]
 
-// ✅ FINAL PRODUCTION BACKEND (NO LOCALHOST)
-const API_URL = "https://mindease-v3.onrender.com/api"
+async function resolveApiUrl() {
+const cached = localStorage.getItem("mindease_api_url") || ""
+if (cached) {
+  try {
+    const res = await fetch(cached + "/health", { method: "GET" })
+    if (res.ok) return cached
+  } catch {
+    localStorage.removeItem("mindease_api_url")
+  }
+}
+
+for (const candidate of API_CANDIDATES) {
+  try {
+    const res = await fetch(candidate + "/health", { method: "GET" })
+    if (res.ok) {
+      localStorage.setItem("mindease_api_url", candidate)
+      return candidate
+    }
+  } catch {
+    continue
+  }
+}
+
+return API_CANDIDATES[API_CANDIDATES.length - 1]
+}
 
 function getRedirectTarget() {
 const redirect = (params.get("redirect") || "").trim().toLowerCase()
@@ -98,15 +127,14 @@ return
 }
 
 try {
+const apiUrl = await resolveApiUrl()
 const endpoint = mode === "signup" ? "/auth/register" : "/auth/login"
 
 const body = mode === "signup"
   ? { full_name: fullName, email, password }
   : { email, password }
 
-console.log("API CALL →", `${API_URL}${endpoint}`)
-
-const res = await fetch(`${API_URL}${endpoint}`, {
+const res = await fetch(`${apiUrl}${endpoint}`, {
   method: "POST",
   headers: {
     "Content-Type": "application/json"
@@ -178,7 +206,8 @@ return
 }
 
 try {
-const res = await fetch(`${API_URL}/auth/forgot-password`, {
+const apiUrl = await resolveApiUrl()
+const res = await fetch(`${apiUrl}/auth/forgot-password`, {
 method: "POST",
 headers: { "Content-Type": "application/json" },
 body: JSON.stringify({ email })
