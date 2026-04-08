@@ -2,8 +2,9 @@ fastapi
 uvicorn
 requests
 python-dotenv
-openai
-pymongo
-dnspython
 python-jose[cryptography]
 passlib[bcrypt]
+bcrypt
+pymongo
+dnspython
+pydantic

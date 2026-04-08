@@ -33,20 +33,50 @@ MONGO_URI = os.getenv("MONGO_URI", "mongodb://localhost:27017")
 MONGO_DB_NAME = os.getenv("MONGO_DB_NAME", "mindease")
 INTENTS_DATASET_PATH = os.getenv("INTENTS_DATASET_PATH", "dataset/intents.json")
 AUTO_MOOD_INTERVAL_MINUTES = int(os.getenv("AUTO_MOOD_INTERVAL_MINUTES", "10"))
-ALLOWED_ORIGINS = [
-    origin.strip()
-    for origin in os.getenv("FRONTEND_ORIGINS", "http://127.0.0.1:5500,http://localhost:5500").split(",")
-    if origin.strip()
-]
+
+
+def parse_frontend_origins(raw_value: str) -> list[str]:
+    """Parse comma-separated origins and gracefully handle malformed markdown-like values."""
+    cleaned = (raw_value or "").strip()
+    if not cleaned:
+        return []
+
+    # Accept normal comma-separated env values first.
+    parts = [part.strip() for part in cleaned.split(",") if part.strip()]
+
+    # If the value contains markdown-link formatting, extract raw URLs.
+    if any("[" in part or "](" in part for part in parts):
+        extracted = re.findall(r"https?://[^,\]\s]+", cleaned)
+        parts = extracted or parts
+
+    deduped: list[str] = []
+    seen = set()
+    for origin in parts:
+        if origin not in seen:
+            deduped.append(origin)
+            seen.add(origin)
+    return deduped
+
+
+frontend_origins = os.getenv(
+    "FRONTEND_ORIGINS",
+    "http://127.0.0.1:5500,http://localhost:5500,https://mindeasev3.vercel.app",
+)
+
+ALLOWED_ORIGINS = parse_frontend_origins(frontend_origins)
+if "null" not in ALLOWED_ORIGINS:
+    ALLOWED_ORIGINS.append("null")
 
 app = FastAPI(title="MindEase API", version="3.0.0")
 
 app.add_middleware(
     CORSMiddleware,
     allow_origins=ALLOWED_ORIGINS,
+    allow_origin_regex=r"^(https?://(localhost|127\.0\.0\.1)(:\d+)?|null)$",
     allow_credentials=True,
-    allow_methods=["GET", "POST", "PUT", "DELETE"],
-    allow_headers=["Authorization", "Content-Type"],
+    allow_methods=["*"],
+    allow_headers=["*"],
+    expose_headers=["*"],
 )
 
 
@@ -118,6 +148,7 @@ pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 security = HTTPBearer()
 
 mongo_client = MongoClient(MONGO_URI)
+mongo_client.admin.command("ping")
 db = mongo_client[MONGO_DB_NAME]
 users_collection = db["users"]
 chat_collection = db["chat_messages"]
