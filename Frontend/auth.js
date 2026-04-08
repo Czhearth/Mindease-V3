@@ -111,6 +111,14 @@ try {
 }
 
 if (!res.ok) {
+  if (res.status === 409) {
+    authMessage.innerText = "Email already exists. Switch to Login or use another email."
+    return
+  }
+  if (res.status === 401) {
+    authMessage.innerText = "Invalid email or password."
+    return
+  }
   authMessage.innerText = data.detail || "Authentication failed."
   return
 }
