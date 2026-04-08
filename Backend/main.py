@@ -64,6 +64,17 @@ frontend_origins = os.getenv(
 )
 
 ALLOWED_ORIGINS = parse_frontend_origins(frontend_origins)
+
+# Ensure critical production/local origins are always present even if env is misconfigured.
+REQUIRED_ORIGINS = [
+    "https://mindeasev3.vercel.app",
+    "http://127.0.0.1:5500",
+    "http://localhost:5500",
+]
+for required in REQUIRED_ORIGINS:
+    if required not in ALLOWED_ORIGINS:
+        ALLOWED_ORIGINS.append(required)
+
 if "null" not in ALLOWED_ORIGINS:
     ALLOWED_ORIGINS.append("null")
 
@@ -72,7 +83,7 @@ app = FastAPI(title="MindEase API", version="3.0.0")
 app.add_middleware(
     CORSMiddleware,
     allow_origins=ALLOWED_ORIGINS,
-    allow_origin_regex=r"^(https?://(localhost|127\.0\.0\.1)(:\d+)?|null)$",
+    allow_origin_regex=r"^(https?://(localhost|127\.0\.0\.1)(:\d+)?|https://([a-z0-9-]+\.)?vercel\.app|null)$",
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -359,7 +370,11 @@ def get_current_user(credentials: HTTPAuthorizationCredentials = Depends(securit
 
 @app.get("/api/health")
 async def health_check():
-    return {"status": "ok", "service": "mindease-api"}
+    return {
+        "status": "ok",
+        "service": "mindease-api",
+        "allowed_origins": ALLOWED_ORIGINS,
+    }
 
 
 @app.get("/api/dataset/status")
@@ -369,50 +384,62 @@ async def dataset_status(user=Depends(get_current_user)):
 
 @app.post("/api/auth/register")
 async def register_user(payload: RegisterRequest):
-    email = normalize_email(payload.email)
-    if "@" not in email or "." not in email.split("@")[-1]:
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid email")
-
-    document = {
-        "full_name": payload.full_name.strip(),
-        "email": email,
-        "password_hash": hash_password(payload.password),
-        "created_at": datetime.now(timezone.utc),
-    }
-
     try:
-        result = users_collection.insert_one(document)
-    except DuplicateKeyError as exc:
-        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="Email already exists") from exc
+        email = normalize_email(payload.email)
+        if "@" not in email or "." not in email.split("@")[-1]:
+            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid email")
 
-    token = create_access_token(str(result.inserted_id), email)
-    return {
-        "token": token,
-        "user": {
-            "id": str(result.inserted_id),
-            "full_name": document["full_name"],
+        document = {
+            "full_name": payload.full_name.strip(),
             "email": email,
-        },
-    }
+            "password_hash": hash_password(payload.password),
+            "created_at": datetime.now(timezone.utc),
+        }
+
+        try:
+            result = users_collection.insert_one(document)
+        except DuplicateKeyError as exc:
+            raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="Email already exists") from exc
+
+        token = create_access_token(str(result.inserted_id), email)
+        return {
+            "token": token,
+            "user": {
+                "id": str(result.inserted_id),
+                "full_name": document["full_name"],
+                "email": email,
+            },
+        }
+    except HTTPException:
+        raise
+    except Exception as exc:
+        print("REGISTER ERROR:", repr(exc))
+        raise HTTPException(status_code=500, detail="Register failed on server") from exc
 
 
 @app.post("/api/auth/login")
 async def login_user(payload: LoginRequest):
-    email = normalize_email(payload.email)
-    user = users_collection.find_one({"email": email})
+    try:
+        email = normalize_email(payload.email)
+        user = users_collection.find_one({"email": email})
 
-    if not user or not verify_password(payload.password, user["password_hash"]):
-        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid credentials")
+        if not user or not verify_password(payload.password, user["password_hash"]):
+            raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid credentials")
 
-    token = create_access_token(str(user["_id"]), email)
-    return {
-        "token": token,
-        "user": {
-            "id": str(user["_id"]),
-            "full_name": user["full_name"],
-            "email": user["email"],
-        },
-    }
+        token = create_access_token(str(user["_id"]), email)
+        return {
+            "token": token,
+            "user": {
+                "id": str(user["_id"]),
+                "full_name": user["full_name"],
+                "email": user["email"],
+            },
+        }
+    except HTTPException:
+        raise
+    except Exception as exc:
+        print("LOGIN ERROR:", repr(exc))
+        raise HTTPException(status_code=500, detail="Login failed on server") from exc
 
 
 @app.get("/api/intro")
